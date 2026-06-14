@@ -6,32 +6,44 @@ import pandas as pd
 def load_resume_data():
     """
     Downloads the resume dataset from Kaggle using kagglehub
-    and returns a cleaned Pandas DataFrame.
+    and returns a cleaned Pandas DataFrame. Handles nested directory structures.
     """
     print("Downloading dataset from Kaggle...")
     # Download latest version
     path = kagglehub.dataset_download("snehaanbhawal/resume-dataset")
     print("Path to dataset files:", path)
     
-    # Locate the CSV file inside the downloaded directory
-    csv_files = glob.glob(os.path.join(path, "*.csv"))
+    # FIX: Search recursively down the folder tree for ANY .csv file
+    csv_files = glob.glob(os.path.join(path, "**", "*.csv"), recursive=True)
+    
     if not csv_files:
-        raise FileNotFoundError("No CSV file found in the downloaded dataset path.")
+        raise FileNotFoundError(f"No CSV file found in the downloaded dataset path. Looked inside: {path}")
     
-    # Load the dataset (usually named Resume.csv)
-    df = pd.read_csv(csv_files[0])
+    # Choose the first matched CSV file
+    target_csv = csv_files[0]
+    print(f"Found CSV File at: {target_csv}")
     
-    # Ensure standard column naming based on this specific dataset
-    # Expected columns: 'Category' and 'Resume_str' or 'Resume'
+    # Load the dataset
+    df = pd.read_csv(target_csv)
+    
+    # Clean and match column syntax for snehaanbhawal/resume-dataset
+    # This dataset uses 'Resume_str' for text content and 'Category' for target labels
     if 'Resume_str' in df.columns:
         df = df.rename(columns={'Resume_str': 'Resume_Text'})
     elif 'Resume' in df.columns:
         df = df.rename(columns={'Resume': 'Resume_Text'})
         
+    # Ensure mandatory columns exist before subsetting
+    if 'Category' not in df.columns or 'Resume_Text' not in df.columns:
+        raise KeyError(f"Expected columns 'Category' and 'Resume_Text' not found. Available: {list(df.columns)}")
+        
     return df[['Category', 'Resume_Text']]
 
 if __name__ == "__main__":
-    # Test script locally
-    data = load_resume_data()
-    print(f"Dataset loaded successfully! Shape: {data.shape}")
-    print(data.head(2))
+    # Quick diagnostics test
+    try:
+        data = load_resume_data()
+        print(f"\nSuccess! Dataset loaded successfully. Shape: {data.shape}")
+        print(data.head(2))
+    except Exception as e:
+        print(f"Error occurred: {e}")
