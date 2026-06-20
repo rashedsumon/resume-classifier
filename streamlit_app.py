@@ -22,7 +22,7 @@ def get_ai_model():
 model = get_ai_model()
 
 # User Interface
-st.title("📄 AI Resume Classifier")
+st.title("📄 Resume Prediction")
 st.write("Upload a resume or paste text to identify its domain/job category instantly.")
 
 st.divider()
